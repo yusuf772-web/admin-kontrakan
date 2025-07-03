@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasbor Admin - Aplikasi Kontrakan</title>
+    <!-- Memuat Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Memuat Font Inter dari Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .admin-list-container::-webkit-scrollbar { width: 8px; }
+        .admin-list-container::-webkit-scrollbar-track { background: transparent; }
+        .admin-list-container::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 20px; border: 2px solid #1f2937; }
+        .admin-list-container::-webkit-scrollbar-thumb:hover { background-color: #6b7280; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white antialiased">
+
+    <!-- Kontainer Utama -->
+    <div id="app-container" class="container mx-auto p-4 md:p-8 min-h-screen flex items-center justify-center">
+        
+        <div id="main-content" class="w-full max-w-md">
+            
+            <!-- Halaman Login Admin -->
+            <div id="admin-login-page" class="hidden">
+                <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 flex flex-col">
+                    <div class="mb-8 text-center">
+                        <h1 class="text-3xl font-bold text-cyan-400">Dasbor Admin</h1>
+                        <p class="text-gray-400">Silakan masukkan password untuk melanjutkan</p>
+                    </div>
+                    <form id="admin-login-form" class="flex-grow flex flex-col">
+                        <div class="mb-6">
+                            <label for="admin-password" class="block mb-2 text-sm font-medium text-gray-300">Password Super Admin</label>
+                            <input type="password" id="admin-password" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg w-full p-3.5" required>
+                        </div>
+                        <button type="submit" class="w-full text-white bg-cyan-600 hover:bg-cyan-700 font-medium rounded-lg text-sm px-5 py-3.5">Masuk</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Halaman Dasbor Admin (Template) -->
+            <div id="admin-dashboard-page" class="hidden"></div>
+
+            <!-- Indikator Loading -->
+            <div id="loading-indicator" class="hidden text-center">
+                <svg class="animate-spin h-8 w-8 text-cyan-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="mt-2 text-sm text-gray-400">Memuat...</p>
+            </div>
+
+            <!-- Notifikasi -->
+            <div id="notification" class="hidden fixed bottom-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg z-50">
+                <p id="notification-message"></p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal Kirim Info Admin -->
+    <div id="send-info-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 max-w-md w-full text-left flex flex-col">
+            <h3 class="text-xl font-semibold mb-1 text-cyan-400">Kirim Info ke Pengguna</h3>
+            <p id="send-info-target-name" class="text-sm text-gray-400 mb-4"></p>
+            <textarea id="send-info-textarea" class="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-3.5 min-h-[120px]" placeholder="Tulis pesan Anda di sini..."></textarea>
+            <div class="mt-6 flex space-x-3">
+                <button id="send-info-button" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg">Kirim</button>
+                <button id="close-send-info-modal" class="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Batal</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Riwayat Pesan -->
+    <div id="message-history-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 max-w-lg w-full text-left flex flex-col max-h-[90vh]">
+            <h3 class="text-xl font-semibold mb-1 text-cyan-400">Riwayat Pesan</h3>
+            <p id="message-history-target-name" class="text-sm text-gray-400 mb-4"></p>
+            <div id="message-history-list" class="flex-grow space-y-3 overflow-y-auto pr-2 admin-list-container">
+                <!-- Konten riwayat pesan akan diisi di sini -->
+            </div>
+            <div class="mt-6 flex">
+                <button id="close-message-history-modal" class="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Tutup</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Buat Kode Bayar -->
+    <div id="cash-code-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 max-w-md w-full text-left flex flex-col">
+            <h3 class="text-xl font-semibold mb-1 text-cyan-400">Buat Kode Bayar Tunai</h3>
+            <p id="cash-code-target-name" class="text-sm text-gray-400 mb-4"></p>
+            <div class="mb-4">
+                <label for="cash-code-month-select" class="block mb-2 text-sm font-medium text-gray-300">Pilih Tagihan</label>
+                <select id="cash-code-month-select" class="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2.5"></select>
+            </div>
+            <div class="mb-6">
+                <p class="text-sm text-gray-400">Total yang harus dibayar:</p>
+                <p id="cash-code-total-amount" class="text-2xl font-bold"></p>
+            </div>
+            <div class="mt-6 flex space-x-3">
+                <button id="generate-cash-code-button" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg">Buat Kode</button>
+                <button id="close-cash-code-modal" class="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Peringatan Konfigurasi -->
+    <div id="config-warning" class="hidden fixed inset-0 bg-gray-900 bg-opacity-95 flex items-center justify-center z-50 p-4">
+        <div class="text-center bg-gray-800 p-8 rounded-2xl shadow-lg max-w-lg border border-red-500">
+            <h2 class="text-2xl font-bold text-red-500 mb-4">Konfigurasi Firebase Diperlukan</h2>
+            <p class="text-gray-300 mb-2">Aplikasi ini belum bisa dijalankan karena konfigurasi Firebase belum diatur.</p>
+        </div>
+    </div>
+
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, serverTimestamp, addDoc, orderBy, onSnapshot, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- KONFIGURASI FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdh3nYWA1E_G4o8JcC89481bnThCIc038",
+            authDomain: "kontrakan-92690.firebaseapp.com",
+            projectId: "kontrakan-92690",
+            storageBucket: "kontrakan-92690.appspot.com",
+            messagingSenderId: "48507829301",
+            appId: "1:48507829301:web:d88a6c59533eb92d57c57c",
+            measurementId: "G-KSL4T28GG3"
+        };
+
+        // --- KREDENSIAL ADMIN ---
+        const ADMIN_PASS = "superadmin123";
+        const ADMIN_EMAIL = "admin@kontrakan.app";
+        let unsubscribeAdminListener = null;
+
+        // --- VALIDASI KONFIGURASI ---
+        if (firebaseConfig.apiKey.startsWith("GANTI_DENGAN")) {
+            document.getElementById('config-warning').classList.remove('hidden');
+        } else {
+            initializeAppAndRun();
+        }
+
+        function initializeAppAndRun() {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+
+            // --- REFERENSI ELEMEN DOM ---
+            const mainContent = document.getElementById('main-content');
+            const adminLoginPage = document.getElementById('admin-login-page');
+            const adminDashboardPage = document.getElementById('admin-dashboard-page');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notification-message');
+            const sendInfoModal = document.getElementById('send-info-modal');
+            const messageHistoryModal = document.getElementById('message-history-modal');
+            const cashCodeModal = document.getElementById('cash-code-modal');
+            const adminLoginForm = document.getElementById('admin-login-form');
+            
+            const baseRent = 550000;
+            const oneMonthTotal = baseRent + 10000;
+
+            // --- FUNGSI UI ---
+            function showPage(pageToShow) {
+                adminLoginPage.classList.add('hidden');
+                adminDashboardPage.classList.add('hidden');
+                loadingIndicator.classList.add('hidden');
+                mainContent.classList.add('max-w-md');
+                mainContent.classList.remove('max-w-5xl');
+
+                if (pageToShow) {
+                    if (pageToShow === adminDashboardPage) {
+                        mainContent.classList.remove('max-w-md');
+                        mainContent.classList.add('max-w-5xl');
+                    }
+                    pageToShow.classList.remove('hidden');
+                    pageToShow.classList.add('fade-in');
+                }
+            }
+            
+            function showLoading() {
+                showPage(null);
+                loadingIndicator.classList.remove('hidden');
+            }
+
+            function showNotification(message, isError = false) {
+                notificationMessage.textContent = message;
+                notification.className = `fixed bottom-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg z-50 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+                notification.classList.remove('hidden');
+                setTimeout(() => { notification.classList.add('hidden'); }, 3000);
+            }
+
+            function formatDate(dateString) {
+                if (!dateString) return 'N/A';
+                const date = new Date(dateString);
+                const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+                return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            }
+            
+            function formatTimestamp(timestamp) {
+                if (!timestamp) return 'Tidak ada';
+                return timestamp.toDate().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+            }
+            
+            function formatRupiah(number) {
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+            }
+
+            // --- LOGIKA AUTENTIKASI ---
+            onAuthStateChanged(auth, async (user) => {
+                if (unsubscribeAdminListener) {
+                    unsubscribeAdminListener();
+                }
+
+                if (user) {
+                    showLoading();
+                    const userDocRef = doc(db, "users", user.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+
+                    if (userDocSnap.exists() && userDocSnap.data().isAdmin) {
+                        listenToUsersData();
+                    } else {
+                        await signOut(auth);
+                        showPage(adminLoginPage);
+                    }
+                } else {
+                    showPage(adminLoginPage);
+                }
+            });
+
+            adminLoginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const password = adminLoginForm['admin-password'].value;
+                if (password !== ADMIN_PASS) {
+                    showNotification("Password admin salah.", true);
+                    return;
+                }
+
+                showLoading();
+                
+                try {
+                    await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASS);
+                } catch (error) {
+                    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                        try {
+                            const userCredential = await createUserWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASS);
+                            await setDoc(doc(db, "users", userCredential.user.uid), { name: "Super Admin", contractId: "ADMIN", isAdmin: true });
+                        } catch (creationError) {
+                            showNotification("Gagal membuat akun admin.", true);
+                            showPage(adminLoginPage);
+                        }
+                    } else {
+                        showNotification("Gagal login sebagai admin.", true);
+                        showPage(adminLoginPage);
+                    }
+                }
+            });
+
+            // --- LOGIKA ADMIN ---
+            function listenToUsersData() {
+                const q = query(collection(db, "users"), where("isAdmin", "==", false));
+                unsubscribeAdminListener = onSnapshot(q, (querySnapshot) => {
+                    const users = [];
+                    querySnapshot.forEach(doc => {
+                        users.push({ id: doc.id, ...doc.data() });
+                    });
+                    buildAdminDashboardUI(users);
+                    showPage(adminDashboardPage);
+                }, (error) => {
+                    showNotification("Gagal memuat data pengguna. Periksa Security Rules Anda.", true);
+                    console.error("Real-time listener error:", error);
+                    signOut(auth);
+                });
+            }
+
+            function buildAdminDashboardUI(users) {
+                const userListHTML = users.map(user => {
+                    const arrearsCount = user.arrears ? user.arrears.length : 0;
+                    const statusClass = arrearsCount > 0 ? 'bg-orange-500' : 'bg-green-500';
+                    const statusText = arrearsCount > 0 ? `${arrearsCount} Bulan` : 'Lunas';
+                    
+                    const messageStatusClass = user.adminMessage ? 'bg-yellow-500' : 'bg-green-500';
+                    const messageStatusText = user.adminMessage ? 'Belum Dibaca' : 'Dibaca';
+
+                    let actionButtonHTML = '';
+                    if (user.pendingCashPayment) {
+                        actionButtonHTML = `<button class="confirm-cash-btn text-green-400 hover:underline text-sm">Konfirmasi</button>`;
+                    } else if (arrearsCount > 0) {
+                        actionButtonHTML = `<button class="create-cash-code-btn text-cyan-400 hover:underline text-sm">Bayar Tunai</button>`;
+                    }
+
+                    return `
+                        <tr class="border-b border-gray-700 hover:bg-gray-700/50" data-uid="${user.id}">
+                            <td class="p-4">${user.name}</td>
+                            <td class="p-4 text-gray-400">${user.contractId}</td>
+                            <td class="p-4"><span class="px-2 py-1 text-xs font-bold rounded-full ${statusClass}">${statusText}</span></td>
+                            <td class="p-4"><span class="px-2 py-1 text-xs font-bold rounded-full ${messageStatusClass}">${messageStatusText}</span></td>
+                            <td class="p-4 text-gray-400">${user.pendingCashPayment ? `Menunggu: ${user.pendingCashPayment.code}` : 'Tidak Ada'}</td>
+                            <td class="p-4 text-right space-x-4">
+                                <button class="view-msg-history-btn text-gray-400 hover:text-cyan-400 text-sm">Riwayat</button>
+                                <button class="send-info-btn text-cyan-400 hover:underline text-sm">Kirim Info</button>
+                                ${actionButtonHTML}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                adminDashboardPage.innerHTML = `
+                    <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 flex flex-col">
+                        <div class="flex items-center justify-between mb-6">
+                            <div><h2 class="text-2xl font-semibold">Dasbor Super Admin</h2><p class="text-sm text-gray-400">Total ${users.length} pengguna terdaftar.</p></div>
+                            <button id="admin-logout-button" class="p-2 text-gray-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></button>
+                        </div>
+                        <div class="admin-list-container overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="border-b border-gray-600 text-xs text-gray-400 uppercase"><tr>
+                                    <th class="p-4">Nama Lengkap</th><th class="p-4">ID Kontrakan</th><th class="p-4">Tunggakan</th><th class="p-4">Status Pesan</th><th class="p-4">Kode Bayar</th><th class="p-4">Aksi</th>
+                                </tr></thead>
+                                <tbody id="admin-user-list">${userListHTML}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('admin-logout-button').addEventListener('click', async () => { await signOut(auth); });
+                
+                document.getElementById('admin-user-list').addEventListener('click', (e) => {
+                    const button = e.target.closest('button');
+                    if (!button) return;
+
+                    const row = button.closest('tr');
+                    const uid = row.dataset.uid;
+                    const user = users.find(u => u.id === uid);
+
+                    if (button.classList.contains('send-info-btn')) {
+                        openSendInfoModal(uid, user.name);
+                    } else if (button.classList.contains('view-msg-history-btn')) {
+                        openMessageHistoryModal(uid, user.name);
+                    } else if (button.classList.contains('create-cash-code-btn')) {
+                        openCashCodeModal(user);
+                    } else if (button.classList.contains('confirm-cash-btn')) {
+                        confirmCashPayment(user);
+                    }
+                });
+            }
+
+            function openSendInfoModal(uid, name) {
+                const modalTargetName = document.getElementById('send-info-target-name');
+                const modalTextarea = document.getElementById('send-info-textarea');
+                const modalSendButton = document.getElementById('send-info-button');
+                
+                modalTargetName.textContent = `Untuk: ${name}`;
+                modalTextarea.value = '';
+                
+                const newSendButton = modalSendButton.cloneNode(true);
+                modalSendButton.parentNode.replaceChild(newSendButton, modalSendButton);
+
+                newSendButton.addEventListener('click', async () => {
+                    const message = modalTextarea.value.trim();
+                    if (!message) {
+                        showNotification("Pesan tidak boleh kosong.", true);
+                        return;
+                    }
+                    
+                    const userDocRef = doc(db, "users", uid);
+                    const messageHistoryRef = collection(db, "users", uid, "messageHistory");
+
+                    const messageData = { text: message, sentAt: serverTimestamp() };
+
+                    await updateDoc(userDocRef, { adminMessage: messageData });
+                    await addDoc(messageHistoryRef, messageData);
+
+                    showNotification(`Pesan terkirim ke ${name}.`, false);
+                    sendInfoModal.classList.add('hidden');
+                });
+                
+                sendInfoModal.classList.remove('hidden');
+            }
+            
+            document.getElementById('close-send-info-modal').addEventListener('click', () => sendInfoModal.classList.add('hidden'));
+
+            async function openMessageHistoryModal(uid, name) {
+                const modalTargetName = document.getElementById('message-history-target-name');
+                const historyList = document.getElementById('message-history-list');
+
+                modalTargetName.textContent = `Untuk: ${name}`;
+                historyList.innerHTML = `<div class="text-center p-4"><div class="animate-spin h-6 w-6 text-cyan-400 mx-auto"></div></div>`;
+                messageHistoryModal.classList.remove('hidden');
+
+                const messageHistoryRef = collection(db, "users", uid, "messageHistory");
+                const q = query(messageHistoryRef, orderBy("sentAt", "desc"));
+
+                try {
+                    const querySnapshot = await getDocs(q);
+                    if (querySnapshot.empty) {
+                        historyList.innerHTML = '<p class="text-center text-gray-500">Belum ada pesan yang terkirim.</p>';
+                        return;
+                    }
+                    
+                    const messagesHTML = querySnapshot.docs.map(doc => {
+                        const msg = doc.data();
+                        return `
+                            <div class="bg-gray-700/50 p-3 rounded-lg">
+                                <p class="text-sm text-gray-200">${msg.text}</p>
+                                <p class="text-xs text-gray-500 text-right mt-2">${formatTimestamp(msg.sentAt)}</p>
+                            </div>
+                        `;
+                    }).join('');
+                    historyList.innerHTML = messagesHTML;
+
+                } catch (error) {
+                    console.error("Error fetching message history:", error);
+                    historyList.innerHTML = '<p class="text-center text-red-400">Gagal memuat riwayat pesan.</p>';
+                }
+            }
+
+            document.getElementById('close-message-history-modal').addEventListener('click', () => messageHistoryModal.classList.add('hidden'));
+            
+            function openCashCodeModal(user) {
+                const { name, arrears = [] } = user;
+                const modalTargetName = document.getElementById('cash-code-target-name');
+                const monthSelect = document.getElementById('cash-code-month-select');
+                const totalAmount = document.getElementById('cash-code-total-amount');
+                const generateButton = document.getElementById('generate-cash-code-button');
+
+                modalTargetName.textContent = `Untuk: ${name}`;
+                
+                const monthOptions = arrears.map(month => {
+                    const [year, monthNum] = month.split('-');
+                    const monthName = new Date(year, monthNum - 1).toLocaleString('id-ID', { month: 'long' });
+                    return `<option value="${month}">${monthName} ${year}</option>`;
+                }).join('');
+                
+                monthSelect.innerHTML = `<option value="all">Bayar Lunas (${arrears.length} bulan)</option>${monthOptions}`;
+                totalAmount.textContent = formatRupiah(arrears.length * oneMonthTotal);
+
+                monthSelect.onchange = () => {
+                    const amount = monthSelect.value === 'all' ? arrears.length * oneMonthTotal : oneMonthTotal;
+                    totalAmount.textContent = formatRupiah(amount);
+                };
+
+                const newGenerateButton = generateButton.cloneNode(true);
+                generateButton.parentNode.replaceChild(newGenerateButton, generateButton);
+                
+                newGenerateButton.addEventListener('click', async () => {
+                    const amount = monthSelect.value === 'all' ? arrears.length * oneMonthTotal : oneMonthTotal;
+                    const months = monthSelect.value === 'all' ? arrears : [monthSelect.value];
+                    const code = `CASH-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+                    const paymentData = { code, amount, months, createdAt: serverTimestamp() };
+                    
+                    await updateDoc(doc(db, "users", user.id), { pendingCashPayment: paymentData });
+                    showNotification(`Kode bayar ${code} dibuat untuk ${name}.`, false);
+                    cashCodeModal.classList.add('hidden');
+                });
+
+                cashCodeModal.classList.remove('hidden');
+            }
+            
+            document.getElementById('close-cash-code-modal').addEventListener('click', () => cashCodeModal.classList.add('hidden'));
+
+            async function confirmCashPayment(user) {
+                if (!confirm(`Konfirmasi pembayaran tunai untuk ${user.name} sebesar ${formatRupiah(user.pendingCashPayment.amount)}?`)) return;
+                
+                showLoading();
+                const userDocRef = doc(db, "users", user.id);
+
+                const newPaymentRecord = {
+                    amount: user.pendingCashPayment.amount,
+                    method: 'cash',
+                    months: user.pendingCashPayment.months,
+                    paidAt: new Date()
+                };
+
+                const newArrears = user.arrears.filter(month => !user.pendingCashPayment.months.includes(month));
+
+                try {
+                    await updateDoc(userDocRef, {
+                        arrears: newArrears,
+                        paymentHistory: arrayUnion(newPaymentRecord),
+                        pendingCashPayment: null
+                    });
+                    showNotification("Pembayaran tunai berhasil dikonfirmasi!", false);
+                } catch (error) {
+                    showNotification("Gagal mengonfirmasi pembayaran.", true);
+                    console.error("Cash confirmation error:", error);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
