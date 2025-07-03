@@ -179,12 +179,12 @@
                 adminDashboardPage.classList.add('hidden');
                 loadingIndicator.classList.add('hidden');
                 mainContent.classList.add('max-w-md');
-                mainContent.classList.remove('max-w-5xl');
+                mainContent.classList.remove('max-w-6xl');
 
                 if (pageToShow) {
                     if (pageToShow === adminDashboardPage) {
                         mainContent.classList.remove('max-w-md');
-                        mainContent.classList.add('max-w-5xl');
+                        mainContent.classList.add('max-w-6xl');
                     }
                     pageToShow.classList.remove('hidden');
                     pageToShow.classList.add('fade-in');
@@ -301,6 +301,22 @@
                     } else if (arrearsCount > 0) {
                         actionButtonHTML = `<button class="create-cash-code-btn text-cyan-400 hover:underline text-sm">Bayar Tunai</button>`;
                     }
+                    
+                    let paymentCodeHTML = 'Tidak Ada';
+                    if (user.pendingCashPayment) {
+                        paymentCodeHTML = `
+                            <div class="flex items-center space-x-2">
+                                <span>${user.pendingCashPayment.code}</span>
+                                <button class="copy-cash-code-btn text-gray-400 hover:text-white">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zM-1 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        `;
+                    }
+
 
                     return `
                         <tr class="border-b border-gray-700 hover:bg-gray-700/50" data-uid="${user.id}">
@@ -308,7 +324,7 @@
                             <td class="p-4 text-gray-400">${user.contractId}</td>
                             <td class="p-4"><span class="px-2 py-1 text-xs font-bold rounded-full ${statusClass}">${statusText}</span></td>
                             <td class="p-4"><span class="px-2 py-1 text-xs font-bold rounded-full ${messageStatusClass}">${messageStatusText}</span></td>
-                            <td class="p-4 text-gray-400">${user.pendingCashPayment ? `Menunggu: ${user.pendingCashPayment.code}` : 'Tidak Ada'}</td>
+                            <td class="p-4 text-gray-400">${paymentCodeHTML}</td>
                             <td class="p-4 text-right space-x-4">
                                 <button class="view-msg-history-btn text-gray-400 hover:text-cyan-400 text-sm">Riwayat</button>
                                 <button class="send-info-btn text-cyan-400 hover:underline text-sm">Kirim Info</button>
@@ -353,6 +369,11 @@
                         openCashCodeModal(user);
                     } else if (button.classList.contains('confirm-cash-btn')) {
                         confirmCashPayment(user);
+                    } else if (button.classList.contains('copy-cash-code-btn')) {
+                        const codeToCopy = user.pendingCashPayment.code;
+                        navigator.clipboard.writeText(codeToCopy).then(() => {
+                            showNotification(`Kode ${codeToCopy} telah disalin.`, false);
+                        });
                     }
                 });
             }
